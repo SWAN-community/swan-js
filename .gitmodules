@@ -1,0 +1,3 @@
+[submodule "owid-js"]
+	path = owid-js
+	url = https://github.com/SWAN-community/owid-js.git
