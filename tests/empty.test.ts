@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2021 51 Degrees Mobile Experts Limited (51degrees.com)
+ * Copyright 2022 51 Degrees Mobile Experts Limited (51degrees.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License.
@@ -14,8 +14,22 @@
  * under the License.
  * ***************************************************************************/
 
-import { Reader } from '@owid/io';
+import { Empty } from '../src/empty';
+import {
+  testJsonResponse,
+  testPass,
+  testWrongSigner,
+  createEmpty
+} from './shared';
 
-export interface ISerializable<T> {
-    fromByteArray(b: Reader): T
-}
+describe('response empty', () => {
+  test('pass', async () => {
+    await testPass<Empty>(createEmpty);
+  });
+  test('fail wrong signer', async () => {
+    await testWrongSigner<Empty>(createEmpty);
+  });
+  test('serialize JSON', async () => {
+    await testJsonResponse<Empty>(createEmpty, (s) => new Empty(s));
+  });
+});

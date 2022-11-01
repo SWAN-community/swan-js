@@ -1,0 +1,6 @@
+{
+    "jestrunner.configPath": "jest.config.json",
+    "[typescript]": {
+        "editor.tabSize": 2
+    }
+}

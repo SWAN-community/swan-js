@@ -15,45 +15,35 @@
  * ***************************************************************************/
 
 import { Io } from '../owid-js/src/io';
+import { Email } from './email';
+import { Identifier, IIdentifier } from './identifier';
+import { Salt } from './salt';
+import { Crypto } from '../owid-js/src/crypto';
 import { OWID } from '../owid-js/src/owid';
-import { IResponseNode, ResponseNode } from './responseNode';
-
-export interface IFailed extends IResponseNode {
-  host: string;
-  error: string;
-}
 
 /**
- * A response where the sender did not receive a response from the receiver.
+ * Signed In ID. See Model Terms for details.
  */
-export class Failed extends ResponseNode<Failed> {
+export class Sid extends Identifier<Sid> {
 
-  /**
-   * The domain that did not respond.
-   */
-  host: string;
+  protected createSource(): OWID<Sid> {
+    return new OWID<Sid>(this);
+  }
 
-  /**
-   * The error message to add to the tree.
-   */
-  error: string;
-
-  constructor(source?: IFailed) {
+  constructor(source?: IIdentifier) {
     super(source);
-    if (source) {
-      this.host = source.host;
-      this.error = source.error;
-    }
-    this.source = new OWID<Failed>(this, source?.source);
+    this.source = new OWID<Sid>(this, source?.source);
   }
 
   /**
-   * Adds the failed data to the OWID data.
-   * @param b
+   * Set the signed in identifier based on the email and salt provided.
+   * @param email 
+   * @param salt 
    */
-  public addOwidData(b: number[]) {
-    super.addOwidData(b);
-    Io.writeString(b, this.host);
-    Io.writeString(b, this.error);
+  public async setHash(email: Email, salt: Salt) {
+    const b: number[] = [];
+    Io.writeString(b, email.value);
+    Io.writeByteArrayNoLength(b, salt.valueByteArray);
+    this.valueByteArray = await Crypto.hash(Uint8Array.from(b));
   }
 }

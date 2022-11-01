@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2021 51 Degrees Mobile Experts Limited (51degrees.com)
+ * Copyright 2022 51 Degrees Mobile Experts Limited (51degrees.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License.
@@ -37,7 +37,7 @@ export class AuditLog {
  * DOM component.
  */
 export interface AuditHandler {
-  
+
   /**
    * Binds the element to the audit handler. If it up to the audit handler to 
    * determine how it displays the trigger icon.

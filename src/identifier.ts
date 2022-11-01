@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2021 51 Degrees Mobile Experts Limited (51degrees.com)
+ * Copyright 2022 51 Degrees Mobile Experts Limited (51degrees.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License.
@@ -14,18 +14,17 @@
  * under the License.
  * ***************************************************************************/
 
-import { Io, Reader } from '@owid/io';
-import { OWIDTarget, OWID } from '@owid/owid';
-import { IByteArray } from './byteArray';
-import { ISerializable } from './serializable';
-import { Writeable } from './writeable';
+import { Io, Reader } from '../owid-js/src/io';
+import { OWID } from '../owid-js/src/owid';
+import { OWIDTarget } from '../owid-js/src/target';
+import { ByteArray, IByteArray } from './byteArray';
 
 /**
  * Possible types of identifier.
  */
 export enum IdentifierType {
-    rid = 'rid', // Random ID as defined in the Model Terms
-    sid = 'sid' // Signed in ID from the hash of the email and salt
+  rid = 'rid', // Random ID as defined in the Model Terms
+  sid = 'sid' // Signed in ID from the hash of the email and salt
 }
 
 /**
@@ -33,102 +32,92 @@ export enum IdentifierType {
  */
 export interface IIdentifier extends IByteArray {
 
-    /**
-     * The identifier type.
-     */
-    idType: IdentifierType;
+  /**
+   * The identifier type.
+   */
+  idType: IdentifierType;
 }
 
 /**
  * Identifier associated with an OWID.
  */
-export class Identifier extends Writeable implements OWIDTarget, IIdentifier, ISerializable<Identifier> {
+export abstract class Identifier<T extends OWIDTarget> extends ByteArray<T>
+  implements OWIDTarget, IIdentifier {
 
-    /**
-     * The identifier type.
-     */
-    idType: IdentifierType;
+  /**
+   * The identifier type.
+   */
+  idType: IdentifierType;
 
-    /**
-     * OWID associated with the identifier.
-     */
-    source: OWID<Identifier>;
-
-    /**
-     * Value as a byte array
-     */
-    private valueArray: Uint8Array;
-
-    /**
-     * The identifier value as a base 64 string
-     */
-    public get value(): string {
-        return Io.byteArrayToBase64(this.valueArray);
+  /**
+   * Constructs a new instance of Identifier.
+   * @param source of properties contained in the interface.
+   */
+  constructor(source?: IIdentifier) {
+    super(source);
+    if (source) {
+      this.idType = source.idType;
     }
-    public set value(value: string) {
-        this.valueArray = Uint8Array.from(atob(value), c => c.charCodeAt(0));
-    }
+  }
 
-    constructor(source?: IIdentifier) {
-        super(source);
-        if (source) {
-            Object.assign(this, source);
-            this.source = new OWID<Identifier>(this, source.source);
-        }
-    }
+  protected abstract createSource(): OWID<T>;
 
-    /**
-     * Populates the members with the contents of the byte array.
-     * @param b source byte array
-     * @returns this identifier
-     */
-    fromByteArray(b: Reader): Identifier {
-        super.fromByteArray(b);
-        this.idType = Io.readString(b) as IdentifierType;
-        this.valueArray = Io.readByteArray(b);
-        if (!this.source) {
-            this.source = new OWID(this);
-        }
-        this.source.fromByteArray(b);
-        return this;
+  /**
+   * Populates the members with the contents of the byte array.
+   * @param b source byte array
+   * @returns this identifier
+   */
+  public fromByteArray(b: Reader) {
+    super.baseFromByteArray(b);
+    this.idType = Io.readString(b) as IdentifierType;
+    this.valueByteArray = Io.readByteArray(b);
+    if (!this.source) {
+      this.source = this.createSource();
     }
+    this.source.fromByteArray(b);
+  }
 
-    /**
-     * Adds the data needed for the OWID signing and verification.
-     */
-    addOwidData(b: number[]) {
-        super.addOwidData(b);
-        Io.writeString(b, this.idType);
-        Io.writeByteArray(b, this.valueArray);
+  /**
+   * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
+   * Unlike base 64 serialization the persisted member is serialized.
+   * @returns a fresh IIdentifier instance for serialization.
+   */
+  public toJSON(): IIdentifier {
+    return {
+      version: this.version,
+      idType: this.idType,
+      value: this.value,
+      source: this.source,
+      persisted: this.persisted
+    };
+  }
+
+  /**
+   * Adds the data needed for the OWID signing and verification.
+   */
+  public addOwidData(b: number[]): number[] {
+    if (!this.valueByteArray) {
+      throw 'empty identifier value';
     }
+    super.baseAddOwidData(b);
+    Io.writeString(b, this.idType);
+    Io.writeByteArray(b, this.valueByteArray);
+    return b;
+  }
 
-    /**
-     * Printable version of the value.
-     * @returns 
-     */
-    asPrintable(): string {
-        return this.toHexString(this.valueArray);
-    }
+  /**
+   * Printable version of the value.
+   * @returns 
+   */
+  public asPrintable(): string {
+    return this.toHexString(this.valueByteArray);
+  }
 
-    /**
-     * A fresh instance of the interface for serialization.
-     * @returns 
-     */
-    asInterface(): IIdentifier {
-        return {
-            source: this.source?.asInterface(),
-            version: this.version,
-            persisted: this.persisted,
-            value: this.value,
-            idType: this.idType
-        };
-    }
-
-    private toHexString(byteArray: Uint8Array) {
-        let s = '';
-        byteArray.forEach((byte) => {
-          s += ('0' + (byte & 0xFF).toString(16)).slice(-2);
-        });
-        return s;
-      }
+  private toHexString(byteArray: Uint8Array) {
+    let s = '';
+    byteArray.forEach((byte) => {
+      s += ('0' + (byte & 0xFF).toString(16)).slice(-2);
+    });
+    return s;
+  }
 }

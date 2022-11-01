@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2021 51 Degrees Mobile Experts Limited (51degrees.com)
+ * Copyright 2022 51 Degrees Mobile Experts Limited (51degrees.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License.
@@ -14,49 +14,69 @@
  * under the License.
  * ***************************************************************************/
 
-import { Io, Reader } from '@owid/io';
+import { Io, Reader } from '../owid-js/src/io';
+import { IOWID, OWID } from '../owid-js/src/owid';
+import { OWIDTarget } from '../owid-js/src/target';
 
 /**
- * Version number as a positive integer.
+ * Version number as a positive byte.
  */
 export type Version = number;
 
 export interface IBase {
 
-    /**
-     * Indicates the version for the entity.
-     */
-    version: Version;
+  /**
+   * Indicates the version for the entity.
+   */
+  version: Version;
+
+  /**
+   * OWID associated with the writable entity.
+   */
+  source: IOWID;
 }
 
 /**
  * Base class used for all entities that can be signed.
  */
-export class Base implements IBase {
+export class Base<T extends OWIDTarget> implements IBase {
 
-    /**
-     * Indicates the version for the entity.
-     */
-    version: Version = 1;
+  /**
+   * Indicates the version for the entity.
+   */
+  public version: Version = 1;
 
-    /**
-     * True if the OWID related to the entity has been verified with the signer. 
-     * This must be reset if any other fields associated with the entity are
-     * changed.
-     */
-    verified = false;
+  /**
+   * True if the OWID related to the entity has been verified with the signer. 
+   * This must be reset if any other fields associated with the entity are
+   * changed.
+   */
+  public verified = false;
 
-    constructor(source?: IBase) {
-        if (source) {
-            Object.assign(this, source);
-        }
+  /**
+   * OWID associated with the entity.
+   */
+  public source: OWID<T>;
+
+  constructor(source?: IBase) {
+    if (source) {
+      this.version = source.version;
     }
+  }
 
-    addOwidData(b: number[]) {
-        Io.writeByte(b, this.version);
-    }
+  /**
+   * Adds the version byte to the byte array.
+   * @param b 
+   */
+  protected baseAddOwidData(b: number[]) {
+    Io.writeByte(b, this.version);
+  }
 
-    fromByteArray(b: Reader) {
-        this.version = Io.readByte(b);
-    }
+  /**
+   * Sets the version byte from the byte array.
+   * @param b 
+   */
+  protected baseFromByteArray(b: Reader) {
+    this.version = Io.readByte(b);
+  }
 }

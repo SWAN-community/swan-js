@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2021 51 Degrees Mobile Experts Limited (51degrees.com)
+ * Copyright 2022 51 Degrees Mobile Experts Limited (51degrees.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License.
@@ -14,38 +14,72 @@
  * under the License.
  * ***************************************************************************/
 
-import { Io } from '@owid/io';
-import { OWID } from '@owid/owid';
-import { Base } from './base';
-import { Identifier } from './identifier';
-import { Preferences } from './preferences';
+import { Io } from '../owid-js/src/io';
+import { OWID } from '../owid-js/src/owid';
+import { Base, IBase } from './base';
+import { Rid } from './rid';
+import { Sid } from './sid';
+import { IPreferences, Preferences } from './preferences';
+import { IIdentifier } from './identifier';
+
+/**
+ * Seed interface for use with JSON serialization.
+ */
+export interface ISeed extends IBase {
+  transactionIds: string[];
+  pubDomain: string;
+  rid: IIdentifier;
+  preferences: IPreferences;
+  sid: IIdentifier;
+  stopped: string[];
+  source: OWID<Seed>;
+}
 
 /**
  * The Seed gathers data related to the Addressable Content and signs them.
  */
- export class Seed extends Base {
+export class Seed extends Base<Seed> {
 
-    transactionIds: Uint8Array[];
-    pubDomain: string;
-    rid: Identifier;
-    preferences: Preferences;
-    sid: Identifier;
-    stopped: string[];
-    source: OWID<Seed>;
-  
-    /**
-     * Adds the data needed for the OWID signing and verification.
-     */
-    addOwidData(b: number[]) {
-      super.addOwidData(b);
-      Io.writeString(b, this.pubDomain);
-      Io.writeByteArrayArray(b, this.transactionIds);
-      this.rid.source.addTargetAndOwidData(b);
-      Io.writeByteArrayNoLength(b, this.rid.source.signatureArray);
-      this.preferences.source.addTargetAndOwidData(b);
-      Io.writeByteArrayNoLength(b, this.preferences.source.signatureArray);
-      this.sid.source.addTargetAndOwidData(b);
-      Io.writeByteArrayNoLength(b, this.sid.source.signatureArray);
-      Io.writeStrings(b, this.stopped);
+  transactionIds: string[];
+  pubDomain: string;
+  rid: Rid;
+  preferences: Preferences;
+  sid: Sid;
+  stopped: string[];
+  source: OWID<Seed>;
+
+  /**
+   * Constructs a new instance of Seed.
+   * @param source of properties contained in the interface.
+   */
+  constructor(source?: ISeed) {
+    super(source);
+    if (source) {
+      this.pubDomain = source.pubDomain;
+      this.transactionIds = source.transactionIds;
+      this.rid = new Rid(source.rid);
+      this.preferences = new Preferences(source.preferences);
+      this.sid = new Sid(source.sid);
+      this.stopped = source.stopped;
     }
+    this.source = new OWID<Seed>(this, source?.source);
   }
+
+  /**
+   * Adds the data needed for the OWID signing and verification.
+   */
+  public addOwidData(b: number[]) {
+    if (!this.pubDomain) {
+      throw 'pubDomain empty';
+    }
+    if (!this.transactionIds || this.transactionIds.length === 0) {
+      throw 'transactionIds empty';
+    }
+    super.baseAddOwidData(b);
+    Io.writeString(b, this.pubDomain);
+    Io.writeStrings(b, this.transactionIds);
+    this.rid.source.addToByteArray(b);
+    this.preferences.source.addToByteArray(b);
+    this.sid.source.addToByteArray(b);
+  }
+}

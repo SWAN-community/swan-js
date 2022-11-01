@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2021 51 Degrees Mobile Experts Limited (51degrees.com)
+ * Copyright 2022 51 Degrees Mobile Experts Limited (51degrees.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License.
@@ -14,11 +14,15 @@
  * under the License.
  * ***************************************************************************/
 
-import { ResponseNode } from './responseNode';
+import { OWID } from '../owid-js/src/owid';
+import { IResponseNode, ResponseNode } from './responseNode';
 
 /**
  * A response that is simply signing the seed and contains no other information.
  */
-export class Empty extends ResponseNode {
-    // No additional data is needed for this response.
+export class Empty extends ResponseNode<Empty> {
+  constructor(source?: IResponseNode) {
+    super(source);
+    this.source = new OWID<Empty>(this, source?.source);
+  }
 }

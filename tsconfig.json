@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "target": "ES6",
+    "lib": ["dom"],
+    "types": ["node", "jest"],
+    "typeRoots": ["./node_modules/@types", "./owid-js/src/types"]
+  }
+}

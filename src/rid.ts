@@ -14,14 +14,20 @@
  * under the License.
  * ***************************************************************************/
 
+import { OWID } from '../owid-js/src/owid';
+import { Identifier, IIdentifier } from './identifier';
+
 /**
- * The different states for the scope preferences field.
+ * Random ID. See Model Terms for details.
  */
-export enum Scope {
-  // No preference has been provided for scope.
-  notSet,
-  // The network the CMP relates to.
-  network,
-  // The website displayed in the address bar.
-  local
+export class Rid extends Identifier<Rid> {
+
+  protected createSource(): OWID<Rid> {
+    return new OWID<Rid>(this);
+  }
+
+  constructor(source?: IIdentifier) {
+    super(source);
+    this.source = new OWID<Rid>(this, source?.source);
+  }
 }
