@@ -14,10 +14,7 @@
  * under the License.
  * ***************************************************************************/
 
-import { Version } from './base';
-import { Bid } from './bid';
-import { Empty } from './empty';
-import { Failed } from './failed';
+import { ResponseNode } from './responseNode';
 import { Seed } from './seed';
 
 /**
@@ -26,10 +23,25 @@ import { Seed } from './seed';
  * the signed seed from the publisher.
  */
 export class AuditLog {
-  version: Version;
-  seed: Seed;
-  transactionId: Uint8Array;
-  root: (Bid | Empty | Failed)[];
+  
+  seed: string; // Seed in base 64 format
+ 
+  /**
+   * Transaction ID from the seed that the response nodes relate to
+   */
+  transactionId: string;
+
+  roots: ResponseNode[]; // The response nodes and their children.
+
+  /**
+   * The seed for the audit log from the base 64 string.
+   * @returns an instance of the seed
+   */
+  public getSeed(): Seed {
+    const s = new Seed();
+    s.fromBase64(this.seed);
+    return s;
+  }
 }
 
 /**

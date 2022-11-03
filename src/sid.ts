@@ -26,10 +26,6 @@ import { OWID } from '../owid-js/src/owid';
  */
 export class Sid extends Identifier<Sid> {
 
-  protected createSource(): OWID<Sid> {
-    return new OWID<Sid>(this);
-  }
-
   constructor(source?: IIdentifier) {
     super(source);
     this.source = new OWID<Sid>(this, source?.source);

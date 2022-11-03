@@ -44,23 +44,36 @@ export abstract class Writeable<T extends OWIDTarget>
   }
 
   /**
-   * Adds the data from this instance for the OWID signing and verification.
+   * Adds the data from this instance to the byte array. Data from related data
+   * entities should not be included in this method including the OWID, or Seed.
    */
-  public abstract addOwidData(b: number[]): number[];
+  protected abstract addToByteArray(b: number[]): number[];
 
   /**
-   * Populates this instance with the data from the byte array.
+   * Populates this instance only with the data from the byte array.
    * @param b byte array
    */
-  public abstract fromByteArray(b: Reader);
+  protected abstract getFromByteArray(b: Reader);
 
   /**
-   *
-   * @returns this instance as a byte array
+   * Returns this instance as a byte array which can be used with fromByteArray
+   * to populate a fresh instance with the same values.
+   * @returns byte array
    */
   public toByteArray(): Uint8Array {
-    const a = this.source.addToByteArray(this.addOwidData([]));
-    return Uint8Array.from(a);
+    return Uint8Array.from(this.source.addToByteArray(this.addToByteArray([])));
+  }
+
+  /**
+   * Populates this instance and the OWID source from the byte array.
+   * @param b 
+   * @returns 
+   */
+  public fromByteArray(b: Uint8Array) {
+    const r = new Reader(b);
+    this.getFromByteArray(r);
+    this.source.fromByteArray(r);
+    return this;
   }
 
   /**
@@ -68,9 +81,9 @@ export abstract class Writeable<T extends OWIDTarget>
    * @param b
    * @returns this instance
    */
-  public fromBase64(b: string): T {
+  public fromBase64(b: string) {
     const a = Io.byteArrayFromBase64(b);
-    return this.fromByteArray(new Reader(a));
+    this.fromByteArray(a);
   }
 
   /**

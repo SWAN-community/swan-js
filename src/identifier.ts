@@ -15,7 +15,6 @@
  * ***************************************************************************/
 
 import { Io, Reader } from '../owid-js/src/io';
-import { OWID } from '../owid-js/src/owid';
 import { OWIDTarget } from '../owid-js/src/target';
 import { ByteArray, IByteArray } from './byteArray';
 
@@ -60,21 +59,14 @@ export abstract class Identifier<T extends OWIDTarget> extends ByteArray<T>
     }
   }
 
-  protected abstract createSource(): OWID<T>;
-
   /**
    * Populates the members with the contents of the byte array.
    * @param b source byte array
-   * @returns this identifier
    */
-  public fromByteArray(b: Reader) {
+  public getFromByteArray(b: Reader) {
     super.baseFromByteArray(b);
     this.idType = Io.readString(b) as IdentifierType;
     this.valueByteArray = Io.readByteArray(b);
-    if (!this.source) {
-      this.source = this.createSource();
-    }
-    this.source.fromByteArray(b);
   }
 
   /**
@@ -93,13 +85,15 @@ export abstract class Identifier<T extends OWIDTarget> extends ByteArray<T>
   }
 
   /**
-   * Adds the data needed for the OWID signing and verification.
+   * Adds the mediaURL and advertiserURL to the byte array.
+   * @param b byte array to add to
+   * @returns b
    */
-  public addOwidData(b: number[]): number[] {
+  public addToByteArray(b: number[]): number[] {
     if (!this.valueByteArray) {
       throw 'empty identifier value';
     }
-    super.baseAddOwidData(b);
+    super.baseAddToByteArray(b);
     Io.writeString(b, this.idType);
     Io.writeByteArray(b, this.valueByteArray);
     return b;

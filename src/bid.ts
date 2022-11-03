@@ -14,9 +14,9 @@
  * under the License.
  * ***************************************************************************/
 
-import { Io } from '../owid-js/src/io';
+import { Io, Reader } from '../owid-js/src/io';
 import { OWID } from '../owid-js/src/owid';
-import { IResponseNode, ResponseNode } from './responseNode';
+import { IResponseNode, Response } from './response';
 
 export interface IBid extends IResponseNode {
   mediaURL: string;
@@ -26,7 +26,7 @@ export interface IBid extends IResponseNode {
 /**
  * Bid contains the information about the advert to be displayed.
  */
-export class Bid extends ResponseNode<Bid> {
+export class Bid extends Response<Bid> {
 
   /**
    * The URL of the content of the advert provided in response.
@@ -34,7 +34,7 @@ export class Bid extends ResponseNode<Bid> {
   mediaURL: string;
 
   /**
-   * The URL to direct the browser to if the advert is selected
+   * The URL to direct the browser to if the advert is selected.
    */
   advertiserURL: string;
 
@@ -48,12 +48,24 @@ export class Bid extends ResponseNode<Bid> {
   }
 
   /**
-   * Adds the bid data to the OWID data.
-   * @param b
+   * Adds the mediaURL and advertiserURL to the byte array.
+   * @param b byte array to add to
+   * @returns b
    */
-  public addOwidData(b: number[]) {
-    super.addOwidData(b);
-    Io.writeString(b, this.advertiserURL);
+  protected addToByteArray(b: number[]): number[] {
+    super.addToByteArray(b);
     Io.writeString(b, this.mediaURL);
+    Io.writeString(b, this.advertiserURL);
+    return b;
+  }
+
+  /**
+   * Populates the members with the contents of the byte array.
+   * @param b source byte array
+   */
+  protected getFromByteArray(b: Reader) {
+    super.getFromByteArray(b);
+    this.mediaURL = Io.readString(b);
+    this.advertiserURL = Io.readString(b);
   }
 }

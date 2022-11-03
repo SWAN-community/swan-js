@@ -14,39 +14,60 @@
  * under the License.
  * ***************************************************************************/
 
-import { Io } from '../owid-js/src/io';
+import { Io, Reader } from '../owid-js/src/io';
 import { OWID } from '../owid-js/src/owid';
-import { Base, IBase } from './base';
 import { Rid } from './rid';
 import { Sid } from './sid';
 import { IPreferences, Preferences } from './preferences';
 import { IIdentifier } from './identifier';
+import { IWriteable, Writeable } from './writeable';
 
 /**
  * Seed interface for use with JSON serialization.
  */
-export interface ISeed extends IBase {
+export interface ISeed extends IWriteable {
   transactionIds: string[];
   pubDomain: string;
   rid: IIdentifier;
   preferences: IPreferences;
   sid: IIdentifier;
   stopped: string[];
-  source: OWID<Seed>;
 }
 
 /**
  * The Seed gathers data related to the Addressable Content and signs them.
  */
-export class Seed extends Base<Seed> {
+export class Seed extends Writeable<Seed> {
 
-  transactionIds: string[];
-  pubDomain: string;
-  rid: Rid;
-  preferences: Preferences;
-  sid: Sid;
-  stopped: string[];
-  source: OWID<Seed>;
+  /**
+   * Transaction IDs.
+   */
+  public transactionIds: string[];
+
+  /**
+   * The publisher's domain.
+   */
+  public pubDomain: string;
+
+  /**
+   * Random IDentifier. See Model Terms.
+   */
+  public rid: Rid;
+
+  /**
+   * Marketing preferences. See Model Terms.
+   */
+  public preferences: Preferences;
+
+  /**
+   * Signed in Identifier. See Model Terms.
+   */
+  public sid: Sid;
+
+  /**
+   * Array of advert identifiers that have been stopped by the user.
+   */
+  public stopped: string[];
 
   /**
    * Constructs a new instance of Seed.
@@ -66,20 +87,50 @@ export class Seed extends Base<Seed> {
   }
 
   /**
-   * Adds the data needed for the OWID signing and verification.
+   * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
+   * Unlike base 64 serialization the persisted member is serialized.
+   * @returns a fresh IIdentifier instance for serialization.
    */
-  public addOwidData(b: number[]) {
+  public toJSON() {
+    return {
+      version: this.version,
+      pubDomain: this.pubDomain,
+      transactionIds: this.transactionIds,
+      rid: this.rid,
+      preferences: this.preferences,
+      sid: this.sid,
+      stopped: this.stopped,
+      source: this.source,
+    };
+  }
+
+  protected addToByteArray(b: number[]): number[] {
     if (!this.pubDomain) {
       throw 'pubDomain empty';
     }
     if (!this.transactionIds || this.transactionIds.length === 0) {
       throw 'transactionIds empty';
     }
-    super.baseAddOwidData(b);
+    super.baseAddToByteArray(b);
     Io.writeString(b, this.pubDomain);
     Io.writeStrings(b, this.transactionIds);
-    this.rid.source.addToByteArray(b);
-    this.preferences.source.addToByteArray(b);
-    this.sid.source.addToByteArray(b);
+    this.rid.addToByteArray(b);
+    this.preferences.addToByteArray(b);
+    this.sid.addToByteArray(b);
+    Io.writeStrings(b, this.stopped);
+    return b;
+  }
+
+  protected getFromByteArray(b: Reader) {
+    super.baseFromByteArray(b);
+    this.pubDomain = Io.readString(b);
+    this.transactionIds = Io.readStrings(b);
+    this.rid = new Rid();
+    this.rid.getFromByteArray(b);
+    this.preferences = new Preferences();
+    this.preferences.getFromByteArray(b);
+    this.sid = new Sid();
+    this.sid.getFromByteArray(b);
+    this.stopped = Io.readStrings(b);
   }
 }

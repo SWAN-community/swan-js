@@ -35,21 +35,18 @@ export interface ISalt extends IWriteable {
  */
 export class Salt extends ByteArray<Salt> implements ISalt {
 
-  /**
-   * OWID associated with the byte array.
-   */
-  source: OWID<Salt>;
-
   constructor(source?: ISalt) {
     super(source);
     this.source = new OWID<Salt>(this, source?.source);
   }
 
   /**
-   * Adds the data needed for the OWID signing and verification.
+   * Adds the byte array value to the byte array.
+   * @param b byte array to add to
+   * @returns b
    */
-  public addOwidData(b: number[]): number[] {
-    super.baseAddOwidData(b);
+  protected addToByteArray(b: number[]): number[] {
+    super.baseAddToByteArray(b);
     Io.writeByteArray(b, this.valueByteArray);
     return b;
   }
@@ -59,13 +56,9 @@ export class Salt extends ByteArray<Salt> implements ISalt {
    * @param b source byte array
    * @returns this salt
    */
-  public fromByteArray(b: Reader): Salt {
+  protected getFromByteArray(b: Reader): Salt {
     super.baseFromByteArray(b);
     this.valueByteArray = Io.readByteArray(b);
-    if (!this.source) {
-      this.source = new OWID(this);
-    }
-    this.source.fromByteArray(b);
     return this;
   }
   /**

@@ -52,21 +52,19 @@ export class Email extends Writeable<Email> implements IEmail {
    * @param b source byte array
    * @returns this email
    */
-  public fromByteArray(b: Reader): Email {
+  protected getFromByteArray(b: Reader): Email {
     super.baseFromByteArray(b);
     this.value = Io.readString(b);
-    if (!this.source) {
-      this.source = new OWID(this);
-    }
-    this.source.fromByteArray(b);
     return this;
   }
 
   /**
-   * Adds the data needed for the OWID signing and verification.
+   * Adds the email address string to the byte array.
+   * @param b byte array to add to
+   * @returns b
    */
-  public addOwidData(b: number[]): number[] {
-    super.baseAddOwidData(b);
+  protected addToByteArray(b: number[]): number[] {
+    super.baseAddToByteArray(b);
     Io.writeString(b, this.value);
     return b;
   }

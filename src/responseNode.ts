@@ -15,65 +15,39 @@
  * ***************************************************************************/
 
 import { Io } from '../owid-js/src/io';
-import { OWIDTarget } from '../owid-js/src/target';
-import { Base, IBase } from './base';
 import { Bid } from './bid';
 import { Empty } from './empty';
 import { Failed } from './failed';
+import { ResponseType } from './response';
 import { Seed } from './seed';
 
 /**
- * Classes that inherit from Response and form nodes in a tree of response.
+ * A node for the response in a JSON tree.
  */
-export type ResponseTypes = Bid | Empty | Failed;
-
-/**
- * First byte of the data structure will be the type of response.
- */
-export enum ResponseType {
-  Bid = 1,
-  Failed = 2,
-  Empty = 3
-}
-
-export interface IResponseNode extends IBase {
-  children: (Bid | Failed | Empty)[] | undefined;
-}
-
-/**
- * Response node class used by receivers of the seed to sign to indicate they
- * have received the data. The inheriting classes provide details concerning the
- * type of response and might include their own signed data to provide OWID
- * compatible proof they were the source of the data. For example; a DSP might
- * sign the creative payload with an OWID to confirm it came from them.
- */
-export abstract class ResponseNode<T extends OWIDTarget> extends Base<T>
-  implements IResponseNode {
+export class ResponseNode {
+  v: string; // Base 64 response. Unpacks to Bid, Failed, or Empty.
+  c?: ResponseNode[]; // Optional array of child response nodes.
 
   /**
-   * The type of structure the response relates to. This is needed where the 
-   * data is to be marshalled to a byte array that does not support field 
-   * names like JSON.
+   * Get the response for the value v.
    */
-  responseType: ResponseType;
-
-  /**
-   * The seed for the transmission. Should not be set from the request.
-   */
-  seed: Seed;
-
-  /**
-   * Array of child responses, or undefined if a leaf.
-   */
-  children: (Bid | Failed | Empty)[] | undefined;
-
-  /**
-   * Adds the response type to the byte array as a single byte.
-   * @param b
-   */
-  public addOwidData(b: number[]) {
-    super.baseAddOwidData(b);
-    Io.writeByte(b, this.responseType);
-    this.seed.addOwidData(b);
+  public getResponse(seed: Seed): Bid | Failed | Empty {
+    let r: Bid | Failed | Empty;
+    const b = Io.byteArrayFromBase64(this.v);
+    switch(b[0]) {
+      case ResponseType.Bid:
+        r = new Bid().fromByteArray(b);
+        break;
+      case ResponseType.Empty:
+        r = new Empty().fromByteArray(b);
+        break;
+      case ResponseType.Failed:
+        r = new Failed().fromByteArray(b);
+        break;
+      default:
+        throw `response type '${b[0]}' invalid`;
+    }
+    r.seed = seed;
+    return r;
   }
 }

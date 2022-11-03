@@ -3,7 +3,7 @@ import { Io, Reader } from '../owid-js/src/io';
 /**
  * Preferences data without an associated OWID.
  */
- export class PreferencesData {
+export class PreferencesData {
 
   /**
    * True to indicate Personalized marketing, or false for Standard. See Model

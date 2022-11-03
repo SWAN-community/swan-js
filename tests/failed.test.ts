@@ -22,7 +22,9 @@ import {
   testPass,
   testWrongSigner,
   createFailed,
-  createSigned} from './shared';
+  createSigned,
+  testBase64Response
+} from './shared';
 
 describe('response failed', () => {
   test('pass', async () => {
@@ -33,6 +35,9 @@ describe('response failed', () => {
   });
   test('serialize JSON', async () => {
     await testJsonResponse<Failed>(createFailed, (s) => new Failed(s));
+  });
+  test('serialize base 64', async () => {
+    await testBase64Response<Failed>(createFailed);
   });
   test('fail wrong host', async () => {
     const a = await createArtifact();

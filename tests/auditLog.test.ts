@@ -14,16 +14,21 @@
  * under the License.
  * ***************************************************************************/
 
-import { OWID } from '../owid-js/src/owid';
-import { Identifier, IIdentifier } from './identifier';
+import { VerifiedStatus } from '../owid-js/src/verifiedStatus';
+import { Seed } from '../src/seed';
+import { createAuditLog, validateAuditLog } from './shared';
 
-/**
- * Random ID. See Model Terms for details.
- */
-export class Rid extends Identifier<Rid> {
-
-  constructor(source?: IIdentifier) {
-    super(source);
-    this.source = new OWID<Rid>(this, source?.source);
-  }
-}
+describe('audit log', () => {
+  test('pass', async () => {
+    const a = await createAuditLog(2, 2);
+    await validateAuditLog(a.s, a.l, VerifiedStatus.Valid);
+  });
+  test('fail', async () => {
+    const a = await createAuditLog(2, 2);
+    const seed = new Seed();
+    seed.fromBase64(a.l.seed);
+    seed.pubDomain += ' ';
+    a.l.seed = seed.toBase64();
+    await validateAuditLog(a.s, a.l, VerifiedStatus.NotValid);
+  });
+});

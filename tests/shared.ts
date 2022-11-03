@@ -30,10 +30,12 @@ import { Sid } from '../src/sid';
 import { Base } from '../src/base';
 import { OWIDTarget } from '../owid-js/src/target';
 import { Bid } from '../src/bid';
-import { ResponseNode } from '../src/responseNode';
+import { Response, ResponseType } from '../src/response';
 import { Empty } from '../src/empty';
 import { Failed } from '../src/failed';
 import { PreferencesData } from '../src/preferencesData';
+import { AuditLog } from '../src/auditLog';
+import { ResponseNode } from '../src/responseNode';
 
 /**
  * Create a new RID identifier with a UUID.
@@ -158,6 +160,79 @@ export async function createSigned<T extends Base<OWIDTarget>>(
   return e;
 }
 
+export async function createAuditLog(
+  maxLevels: number, 
+  count: number): Promise<{l: AuditLog, s: Signer}> {
+  const a = await createArtifact();
+  const seed = await createSeed();
+  await seed.source.signWithSigner(a.signer);
+  const t = new ResponseNode();
+  await addNodes(seed, a.signer, t, count, 0, maxLevels);
+  const l = new AuditLog();
+  l.roots = t.c;
+  l.seed = seed.toBase64();
+  l.transactionId = seed.transactionIds[0];
+  return {l: l, s: a.signer};
+}
+
+export async function validateAuditLog(
+  signer: Signer, 
+  l: AuditLog, 
+  expected: VerifiedStatus) {
+  const seed = new Seed();
+  seed.fromBase64(l.seed);
+  expect(await seed.source.verifyWithSigner(signer)).toBe(expected);
+  for (let i = 0; i < l.roots.length; i++) {
+    await validateNode(signer, seed, l.roots[i], expected);
+  }
+}
+
+async function validateNode(
+  signer: Signer, 
+  seed: Seed, 
+  node: ResponseNode, 
+  expected: VerifiedStatus) {
+  const v = node.getResponse(seed);
+  expect(await v.source.verifyWithSigner(signer)).toBe(expected);
+  if (node.c) {
+    for (let i = 0; i < node.c.length; i++) {
+      await validateNode(signer, seed, node.c[i], expected);
+    }
+  }
+}
+
+async function addNodes(
+  seed: Seed, 
+  signer: Signer, 
+  parent: ResponseNode, 
+  count: number, 
+  level: number,
+  maxLevels: number) {
+  parent.c = [];
+  for(let i = 0; i < count; i++) {
+    let v: (Bid | Failed | Empty);
+    switch(Math.floor(Math.random() * 2) + 1) {
+      case ResponseType.Bid: 
+        v = await createBid();
+        break;
+      case ResponseType.Empty: 
+        v = await createEmpty();
+        break;
+      case ResponseType.Failed: 
+        v = await createFailed();
+        break;
+    }
+    v.seed = seed;
+    await v.source.signWithSigner(signer);
+    const r = new ResponseNode();
+    r.v = v.toBase64();
+    parent.c.push(r);
+    if (level < maxLevels) {
+      await addNodes(seed, signer, r, count, level+1, maxLevels);
+    }
+  }
+}
+
 /**
  * Tests that the verify with signer method results in a Valid result.
  * @param create 
@@ -208,7 +283,7 @@ export async function testJson<T extends Base<OWIDTarget>>(
  * @param create 
  * @param fromInterface a new instance of T form JSON string
  */
-export async function testJsonResponse<T extends ResponseNode<T>>(
+export async function testJsonResponse<T extends Response<T>>(
   create: () => T | Promise<T>,
   fromInterface: (any) => T) {
   const a = await createArtifact();
@@ -232,6 +307,23 @@ export async function testBase64<T extends Writeable<T>>(
   const b = e.toBase64();
   const c = await create();
   c.fromBase64(b);
+  const r = await c.source.verifyWithSigner(a.signer);
+  expect(r).toBe(VerifiedStatus.Valid);
+}
+
+/**
+ * Tests that the serialization to base 64 and deserialization result in an 
+ * instance that passed verification with the original signer.
+ * @param create 
+ */
+export async function testBase64Response<T extends Response<T>>(
+  create: () => T | Promise<T>) {
+  const a = await createArtifact();
+  const e = await createSigned(a.signer, create);
+  const b = e.toBase64();
+  const c = await create();
+  c.fromBase64(b);
+  c.seed = e.seed;
   const r = await c.source.verifyWithSigner(a.signer);
   expect(r).toBe(VerifiedStatus.Valid);
 }

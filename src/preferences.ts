@@ -40,25 +40,21 @@ export class Preferences extends Writeable<Preferences> implements OWIDTarget {
    */
   data: PreferencesData;
 
-  /**
-   * The OWID indicating the party that captured the preferences.
-   */
-  source: OWID<Preferences>;
-
   constructor(source?: IPreferences) {
     super(source);
     if (source) {
-      Object.assign(this, source);
+      this.data = source.data;
     }
     this.source = new OWID<Preferences>(this, source?.source);
   }
 
   /**
-   * Adds the target preference flag to the byte array as a single 0 or 1 byte.
-   * @param b byte array to add the preference flag to
+   * Adds theuse_browsing_for_personalization flag to the byte array.
+   * @param b byte array to add to
+   * @returns b
    */
-  public addOwidData(b: number[]): number[] {
-    super.baseAddOwidData(b);
+  public addToByteArray(b: number[]): number[] {
+    super.baseAddToByteArray(b);
     Io.writeByte(b, this.data.use_browsing_for_personalization === true ? 1 : 0);
     return b;
   }
@@ -67,16 +63,12 @@ export class Preferences extends Writeable<Preferences> implements OWIDTarget {
    * Populates the members with the contents of the byte array.
    * @param b source byte array
    */
-  public fromByteArray(b: Reader): Preferences {
+  public getFromByteArray(b: Reader): Preferences {
     super.baseFromByteArray(b);
     if (!this.data) {
       this.data = new PreferencesData();
     }
     this.data.fromByteArray(b);
-    if (!this.source) {
-      this.source = new OWID(this);
-    }
-    this.source.fromByteArray(b);
     return this;
   }
 

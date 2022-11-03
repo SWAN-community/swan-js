@@ -39,7 +39,7 @@ export interface IBase {
 /**
  * Base class used for all entities that can be signed.
  */
-export class Base<T extends OWIDTarget> implements IBase {
+export abstract class Base<T extends OWIDTarget> implements IBase, OWIDTarget {
 
   /**
    * Indicates the version for the entity.
@@ -54,7 +54,8 @@ export class Base<T extends OWIDTarget> implements IBase {
   public verified = false;
 
   /**
-   * OWID associated with the entity.
+   * OWID associated with the entity. Must be set in the constructor of the 
+   * inheriting class, or when the JSON is deserialized.
    */
   public source: OWID<T>;
 
@@ -65,10 +66,24 @@ export class Base<T extends OWIDTarget> implements IBase {
   }
 
   /**
+   * Adds the instance data to the byte array. Must exclude the OWID source, or
+   * any related entities.
+   * @param b byte array
+   */
+  protected abstract addToByteArray(b: number[]): number[];
+
+  /**
+   * Adds the OWID data to the buffer.
+   */
+  public addOwidData(b: number[]): void {
+    this.addToByteArray(b);
+  }
+
+  /**
    * Adds the version byte to the byte array.
    * @param b 
    */
-  protected baseAddOwidData(b: number[]) {
+  protected baseAddToByteArray(b: number[]) {
     Io.writeByte(b, this.version);
   }
 

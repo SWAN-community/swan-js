@@ -22,7 +22,8 @@ import {
   testJsonResponse,
   testPass,
   testWrongSigner,
-  createBid
+  createBid,
+  testBase64Response
 } from './shared';
 
 describe('response bid', () => {
@@ -34,6 +35,9 @@ describe('response bid', () => {
   });
   test('serialize JSON', async () => {
     await testJsonResponse<Bid>(createBid, (s) => new Bid(s));
+  });
+  test('serialize base 64', async () => {
+    await testBase64Response<Bid>(createBid);
   });
   test('fail wrong advertiserURL', async () => {
     const a = await createArtifact();

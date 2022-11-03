@@ -15,12 +15,13 @@
  * ***************************************************************************/
 
 import { OWID } from '../owid-js/src/owid';
-import { IResponseNode, ResponseNode } from './responseNode';
+import { IResponseNode, Response } from './response';
 
 /**
  * A response that is simply signing the seed and contains no other information.
  */
-export class Empty extends ResponseNode<Empty> {
+export class Empty extends Response<Empty> {
+
   constructor(source?: IResponseNode) {
     super(source);
     this.source = new OWID<Empty>(this, source?.source);

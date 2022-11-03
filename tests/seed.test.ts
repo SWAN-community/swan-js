@@ -22,7 +22,8 @@ import {
   testJson,
   testPass,
   testWrongSigner,
-  createSeed
+  createSeed,
+  testBase64
 } from './shared';
 
 describe('seed', () => {
@@ -35,11 +36,21 @@ describe('seed', () => {
   test('serialize JSON', async () => {
     await testJson<Seed>(createSeed, (s) => new Seed(s));
   });
+  test('serialize base 64', async () => {
+    await testBase64<Seed>(createSeed);
+  });
   test('fail wrong value', async () => {
     const a = await createArtifact();
     const e = await createSigned<Seed>(a.signer, createSeed);
     e.pubDomain += ' ';
     const r = await e.source.verifyWithSigner(a.signer);
     expect(r).toBe(VerifiedStatus.NotValid);
+  });
+  test('length', async () => {
+    const a = await createArtifact();
+    const e = await createSigned<Seed>(a.signer, createSeed);
+    console.log(
+      `seed length > base 64: '${e.toBase64().length}' bytes | ` +
+      `json: '${JSON.stringify(e).length}' bytes`);
   });
 });

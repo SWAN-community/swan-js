@@ -19,7 +19,8 @@ import {
   testJsonResponse,
   testPass,
   testWrongSigner,
-  createEmpty
+  createEmpty,
+  testBase64Response
 } from './shared';
 
 describe('response empty', () => {
@@ -31,5 +32,8 @@ describe('response empty', () => {
   });
   test('serialize JSON', async () => {
     await testJsonResponse<Empty>(createEmpty, (s) => new Empty(s));
+  });
+  test('serialize base 64', async () => {
+    await testBase64Response<Empty>(createEmpty);
   });
 });
