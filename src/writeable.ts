@@ -22,7 +22,7 @@ export interface IWriteable extends IBase {
   /**
    * True if the instance is persisted, false if not.
    */
-  persisted: boolean;
+  persisted?: boolean;
 }
 
 /**
@@ -32,9 +32,10 @@ export abstract class Writeable<T extends OWIDTarget>
   extends Base<T> implements IWriteable {
 
   /**
-   * True if the instance is persisted, false if not.
+   * True if the instance is persisted, false if not. May be undefined if the
+   * state is unknown or not important.
    */
-  persisted = false;
+  public persisted?: boolean;
 
   constructor(source?: IWriteable) {
     super(source);
